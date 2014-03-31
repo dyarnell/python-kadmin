@@ -62,9 +62,6 @@ static PyMemberDef KAdminPrincipal_members[] = {
     
     {"key_version_number",          T_INT, offsetof(PyKAdminPrincipalObject, entry) + offsetof(kadm5_principal_ent_rec, kvno),                  READONLY, ""},
     {"master_key_version_number",   T_INT, offsetof(PyKAdminPrincipalObject, entry) + offsetof(kadm5_principal_ent_rec, mkvno),                 READONLY, ""},
-
-    {"policy",                      T_INT, offsetof(PyKAdminPrincipalObject, entry) + offsetof(kadm5_principal_ent_rec, policy),                READONLY, ""},
-    
     {NULL}
 };
 
@@ -101,7 +98,20 @@ static PyObject *KAdminPrincipal_set_expire(PyKAdminPrincipalObject *self, PyObj
     Py_RETURN_TRUE;
 }
 
-static PyObject *KAdminPrincipal_set_policy(PyKAdminPrincipalObject *self, PyObject *args, PyObject *kwds) {
+static PyObject *PyKAdminPrincipal_get_policy(PyKAdminPrincipalObject *self, void *closure) {
+
+    char *client_name = NULL;
+
+    krb5_unparse_name(self->kadmin->context, self->entry.principal, &client_name);
+
+    PyObject *policy = Py_BuildValue("s", policy);
+
+    free(client_name);
+
+    return policy;
+}
+
+static PyObject *PyKAdminPrincipal_set_policy(PyKAdminPrincipalObject *self, PyObject *args, PyObject *kwds) {
     
     kadm5_ret_t retval; 
     char *policy = NULL;
@@ -130,10 +140,9 @@ static PyObject *KAdminPrincipal_clear_policy(PyKAdminPrincipalObject *self, PyO
 
 static PyGetSetDef KAdminPrincipal_getters_setters[] = {
 
-    // {"policy", (getter)PyKAdminPrincipal_get_policy, (setter)PyKAdminPrincipal_set_policy, "Kerberos Policy"},
     // {"principal", (getter)PyKAdminPrincipal_get_principal, (setter)PyKAdminPrincipal_set_principal, "Kerberos Principal"},
-    // {"policy", (getter)PyKAdminPrincipal_get_policy, NULL, "Kerberos Policy"},
     
+    {"policy", (getter)PyKAdminPrincipal_get_policy, (setter)PyKAdminPrincipal_set_policy, "Kerberos Policy"},
     {"principal", (getter)PyKAdminPrincipal_get_principal, NULL, "Kerberos Principal"},
     {NULL}
 };
@@ -227,7 +236,6 @@ static PyMethodDef KAdminPrincipal_methods[] = {
     {"randomize_key",   (PyCFunction)KAdminPrincipal_randomize_key,     METH_VARARGS, ""},
     
     {"expire",          (PyCFunction)KAdminPrincipal_set_expire,     METH_VARARGS, ""},
-    {"set_policy",      (PyCFunction)KAdminPrincipal_set_policy,     METH_VARARGS, ""},
     {"clear_policy",    (PyCFunction)KAdminPrincipal_clear_policy,   METH_VARARGS, ""},
 
     {NULL, NULL, 0, NULL}
